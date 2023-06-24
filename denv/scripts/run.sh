@@ -4,7 +4,7 @@
 source scripts/.denv
 
 docker run --rm \
+  --name denv \
   -it \
-  --name dev-env \
-  --volume /var/run/docker.sock:/var/run/docker \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
   ${DENV_IMAGE_NAME}:${DENV_IMAGE_TAG}

@@ -1,1 +1,1 @@
-# ddenv - dockerized developer environment
+# denv - dockerized developer environment

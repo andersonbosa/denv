@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# -*- coding: utf-8 -*-
+
+export DENV_IMAGE_NAME="denv"
+export DENV_IMAGE_TAG="unstable"

@@ -1,0 +1,8 @@
+default-log-dir: /var/log/suricata/
+
+# Configure interfaces and other rules here as needed.
+
+outputs:
+  - fast:
+      enabled: yes
+      filename: fast.log

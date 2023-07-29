@@ -1,0 +1,71 @@
+version: '3.9'
+
+services:
+  traefik:
+    image: traefik:v2.5
+    command:
+      - --api.insecure=true  # Enable insecure API for Traefik dashboard (for testing purposes)
+      - --entryPoints.web.address=:80
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+    ports:
+      - "80:80"    # Expose HTTP port
+      - "443:443"  # Expose HTTPS port
+      - "8080:8080"  # Expose Traefik dashboard (optional)
+    env_file:
+      - .env
+    volumes:
+      - "./traefik/traefik.toml:/etc/traefik/traefik.toml"
+      - "./traefik/acme.json:/acme.json"
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount Docker socket into the container
+    networks:
+      - denv-proxy
+
+  # # https://github.com/telekom-security/tpotce/tree/master/docker/suricata
+  # suricata:
+  #   image: dtagdevsec/suricata:2204
+  #   env_file:
+  #     - .env
+  #   cap_add:
+  #     - NET_RAW
+  #     - NET_ADMIN
+  #   environment:
+  #     # For ET Pro ruleset replace "OPEN" with your OINKCODE
+  #     - OINKCODE=OPEN
+  #     # Loading externel Rules from URL 
+  #     # - FROMURL="https://username:password@yoururl.com|https://username:password@otherurl.com"
+  #   volumes:
+  #     - "./suricata/suricata.yaml:/etc/suricata/suricata.yaml"
+  #   networks:
+  #     - denv-proxy
+
+  postgresql:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  denv:
+    build:
+      dockerfile: Dockerfile
+      context: ./denv
+    env_file:
+      - .env
+    volumes:
+      - ./denv/machine_shared:/machine_shared
+      # - /tmp/.X11-unix:/tmp/.X11-unix 
+    networks:
+      - internal
+      - denv-proxy
+    mem_limit: 2048m
+
+networks:
+  internal:
+  denv-proxy:
+    external: true
+
+volumes:
+  pg_data:

@@ -1,0 +1,27 @@
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+
+[api]
+  insecure = true
+
+[providers.docker]
+  exposedByDefault = false
+
+[http.middlewares]
+  [http.middlewares.loggers]
+    [http.middlewares.loggers.accessLog]
+      format = "common"
+
+[http.routers]
+  [http.routers.traefik]
+    rule = "Host(`traefik.example.com`)"
+    entrypoints = ["web"]
+    middlewares = ["loggers"]
+    service = "api@internal"
+
+[certificatesResolvers.myresolver.acme]
+  email = "your-email@example.com"
+  storage = "acme.json"
+  [certificatesResolvers.myresolver.acme.httpChallenge]
+    entryPoint = "web"

@@ -62,6 +62,14 @@ services:
       - denv-proxy
     mem_limit: 2048m
 
+  vnc_server:
+    image: dorowu/ubuntu-desktop-lxde-vnc
+    container_name: vnc-server
+    ports:
+      - "6080:80"
+    environment:
+      - VNC_RESOLUTION=1920x1080
+
 networks:
   internal:
   denv-proxy:

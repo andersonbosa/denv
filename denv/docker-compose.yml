@@ -1,31 +1,45 @@
 version: '3.9'
 
 services:
+  # reverse proxy and load balancer
+  #
   traefik:
+    env_file:
+      - .env
     image: traefik:v2.5
     command:
       - --api.insecure=true  # Enable insecure API for Traefik dashboard (for testing purposes)
-      - --entryPoints.web.address=:80
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
+      - --entrypoints.ssh.address=:22 # Add entrypoint for SSH
+      - --entryPoints.web.address=:80
+      - --entrypoints.https.address=:443 # Add entrypoint for HTTPS
     ports:
+      - "22:22"    # Expose SSH port
       - "80:80"    # Expose HTTP port
       - "443:443"  # Expose HTTPS port
       - "8080:8080"  # Expose Traefik dashboard (optional)
-    env_file:
-      - .env
     volumes:
       - "./traefik/traefik.toml:/etc/traefik/traefik.toml"
       - "./traefik/acme.json:/acme.json"
-      - /var/run/docker.sock:/var/run/docker.sock  # Mount Docker socket into the container
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount Docker socket into the container for dynamic configuration
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
+      - "traefik.http.routers.traefik.entrypoints=web"
+      - "traefik.http.routers.traefik-https.rule=Host(`traefik.local`)"
+      - "traefik.http.routers.traefik-https.entrypoints=https"
+      - "traefik.http.routers.traefik-https.tls=true"
+      - "traefik.http.services.traefik-https.loadbalancer.server.port=8080"
     networks:
       - denv-proxy
 
+  # # network analysis and threat detection
   # # https://github.com/telekom-security/tpotce/tree/master/docker/suricata
   # suricata:
-  #   image: dtagdevsec/suricata:2204
   #   env_file:
   #     - .env
+  #   image: dtagdevsec/suricata:2204
   #   cap_add:
   #     - NET_RAW
   #     - NET_ADMIN
@@ -40,6 +54,8 @@ services:
   #     - denv-proxy
 
   postgresql:
+    env_file:
+      - .env
     image: postgres:latest
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -47,13 +63,18 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - pg_data:/var/lib/postgresql/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.postgresql.rule=Host(`postgresql.local`)"
+      - "traefik.http.routers.postgresql.entrypoints=web"
+
 
   denv:
+    env_file:
+      - .env
     build:
       dockerfile: Dockerfile
       context: ./denv
-    env_file:
-      - .env
     volumes:
       - ./denv/machine_shared:/machine_shared
       # - /tmp/.X11-unix:/tmp/.X11-unix 
@@ -61,6 +82,11 @@ services:
       - internal
       - denv-proxy
     mem_limit: 2048m
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.denv.rule=Host(`denv.local`)"
+      - "traefik.http.routers.denv.entrypoints=web"
+
 
 networks:
   internal:

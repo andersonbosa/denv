@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo -------------------------------------------------
+echo "[$(date)] DENV entrypoint.sh"
+echo -------------------------------------------------
 # Start the SSH server
 service ssh start
 
